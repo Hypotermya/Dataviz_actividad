@@ -1,6 +1,6 @@
 # Introduccion
 
-Este documento corresponde a la primera actividad de python de la asignatura de Machine visualizacion de datos, desarrollado por el estudiante Miguel Jaimes.
+Este documento corresponde a la primera actividad de python de la asignatura de visualizacion de datos, desarrollado por el estudiante Miguel Jaimes.
 
 El propósito de este documento es aplicar un proceso completo de análisis de datos en Python que incluya la carga, exploración, descripción de variables, visualización y análisis inferencial, con el fin de identificar y comprender la presencia de valores faltantes en el conjunto de datos. A partir de esta detección, se busca investigar los métodos más utilizados para la imputación de datos, evaluar cuál es el más recomendado en función del tipo de variable y del contexto del análisis, y justificar la elección con base en criterios estadísticos y prácticos.
 
