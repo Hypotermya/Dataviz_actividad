@@ -60,7 +60,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Welcome to your Jupyter Book" href="intro.html" />
+    <link rel="prev" title="Introduccion" href="intro.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -174,7 +174,7 @@
         <ul class="nav bd-sidenav bd-sidenav__home-link">
             <li class="toctree-l1">
                 <a class="reference internal" href="intro.html">
-                    Welcome to your Jupyter Book
+                    Introduccion
                 </a>
             </li>
         </ul>
@@ -379,7 +379,11 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#funciones">funciones</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos-y-exploraciones-iniciales">Cargado de datos y exploraciones iniciales</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-descriptivo-eda">Analisis descriptivo(EDA)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contrastacion-de-hipotesis">Contrastación de hipótesis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contrastacion-de-hipotesis">Contrastación de hipótesis</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hipotesis-1-existen-diferencias-significativas-en-los-cargos-segun-habito-de-fumar-t-test">hipotesis 1: ¿Existen diferencias significativas en los cargos según hábito de fumar? (t-test).</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hipotesis-2">Hipotesis 2</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#imputacion-en-python">Imputacion en python</a></li>
 </ul>
             </nav>
@@ -401,7 +405,12 @@ document.write(`
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">shapiro</span><span class="p">,</span> <span class="n">normaltest</span><span class="p">,</span> <span class="n">kstest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">statsmodels.api</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.formula.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">ols</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.multicomp</span><span class="w"> </span><span class="kn">import</span> <span class="n">pairwise_tukeyhsd</span>
 </pre></div>
 </div>
 </div>
@@ -654,6 +663,26 @@ document.write(`
 </div>
 </div>
 </div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cols</span><span class="p">):</span>
+    <span class="n">df_out</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span>
+        <span class="n">Q1</span> <span class="o">=</span> <span class="n">df_out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="n">Q3</span> <span class="o">=</span> <span class="n">df_out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.75</span><span class="p">)</span>
+        <span class="n">IQR</span> <span class="o">=</span> <span class="n">Q3</span> <span class="o">-</span> <span class="n">Q1</span>
+        <span class="n">lower</span> <span class="o">=</span> <span class="n">Q1</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">IQR</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">Q3</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">IQR</span>
+
+        <span class="n">mediana</span> <span class="o">=</span> <span class="n">df_out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+        <span class="n">df_out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">df_out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">lower</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">df_out</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">upper</span><span class="p">),</span>
+                               <span class="n">mediana</span><span class="p">,</span>
+                               <span class="n">df_out</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">df_out</span>
+</pre></div>
+</div>
+</div>
+</div>
 </section>
 <section id="cargado-de-datos-y-exploraciones-iniciales">
 <h2>Cargado de datos y exploraciones iniciales<a class="headerlink" href="#cargado-de-datos-y-exploraciones-iniciales" title="Link to this heading">#</a></h2>
@@ -896,9 +925,9 @@ memory usage: 73.3+ KB
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/32b13ca835e22395fecc9f4f54650f239192a29db275f1b0e4b41d013d98372a.png" src="_images/32b13ca835e22395fecc9f4f54650f239192a29db275f1b0e4b41d013d98372a.png" />
-<img alt="_images/72913cd92e2a759b0c334f6fb144af28239f6a1f05e5aec64d44d79ae35a3451.png" src="_images/72913cd92e2a759b0c334f6fb144af28239f6a1f05e5aec64d44d79ae35a3451.png" />
-<img alt="_images/117280cd236fe546645d288c33040b3411ba1ee06530f885180035ead1f73a56.png" src="_images/117280cd236fe546645d288c33040b3411ba1ee06530f885180035ead1f73a56.png" />
+<img alt="_images/940141ba56ee46c8cf903d667b72451a654bc8c2a31b6cc4881485ebbfc040ae.png" src="_images/940141ba56ee46c8cf903d667b72451a654bc8c2a31b6cc4881485ebbfc040ae.png" />
+<img alt="_images/e3e585e2fe8f51bc0320d3405438b0907930cff97351b3e6b24c12f7125c0376.png" src="_images/e3e585e2fe8f51bc0320d3405438b0907930cff97351b3e6b24c12f7125c0376.png" />
+<img alt="_images/62aa74c504aef3c6e10b5212f667fc07c29c72e9823b781f2abab6b2fe8d78bc.png" src="_images/62aa74c504aef3c6e10b5212f667fc07c29c72e9823b781f2abab6b2fe8d78bc.png" />
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;sex&#39;: sex
  male      676
  female    662
@@ -1018,10 +1047,40 @@ memory usage: 73.3+ KB
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/2f61c908b0fd79708a38c7b05c668128e58b1f60ad9fbf094ba8d43e26d5db90.png" src="_images/2f61c908b0fd79708a38c7b05c668128e58b1f60ad9fbf094ba8d43e26d5db90.png" />
-<img alt="_images/30ca68c8534392ced5e8cbc157be73afffc3c6e3db564652013cf50886d1071f.png" src="_images/30ca68c8534392ced5e8cbc157be73afffc3c6e3db564652013cf50886d1071f.png" />
-<img alt="_images/e366eff623464e8b248e064a2fb04b40b90c049e516801c620f90a70f826d928.png" src="_images/e366eff623464e8b248e064a2fb04b40b90c049e516801c620f90a70f826d928.png" />
-<img alt="_images/5fc5afc91fbe5a9ca2d5f8049c3d6c1b51fa52366901acb974b8502d8cf02fb2.png" src="_images/5fc5afc91fbe5a9ca2d5f8049c3d6c1b51fa52366901acb974b8502d8cf02fb2.png" />
+<img alt="_images/13398792ee5b33bfee9e6d8b206ada3bc1ad16248276513ffcb57729d28e4211.png" src="_images/13398792ee5b33bfee9e6d8b206ada3bc1ad16248276513ffcb57729d28e4211.png" />
+<img alt="_images/e106b775f964e7bbfeb276075b1d98bde5db46579c4484c6e599d958cd0068d6.png" src="_images/e106b775f964e7bbfeb276075b1d98bde5db46579c4484c6e599d958cd0068d6.png" />
+<img alt="_images/8e1ab621a8c03330cc8ce7af55f6137578b9c83ce220680f08258ead46a23c0d.png" src="_images/8e1ab621a8c03330cc8ce7af55f6137578b9c83ce220680f08258ead46a23c0d.png" />
+<img alt="_images/036952d31e3d342c01f2872b463dc8690202d5ada0b4c16c1f53578f1c83cbf8.png" src="_images/036952d31e3d342c01f2872b463dc8690202d5ada0b4c16c1f53578f1c83cbf8.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configuración general</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;seaborn-v0_8&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_palette</span><span class="p">(</span><span class="s2">&quot;Set1&quot;</span><span class="p">)</span>
+
+<span class="c1"># 1. Scatterplot BMI vs Charges (coloreado por Smoker)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;charges&quot;</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s2">&quot;smoker&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;BMI vs Charges (coloreado por Smoker)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;BMI&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Charges&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Smoker&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># 2. Scatterplot Age vs Charges</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;age&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;charges&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Age vs Charges&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Age&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Charges&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/0c2b287111007a19cf7b612631364e1450045349792fc654c849a4078e93cc88.png" src="_images/0c2b287111007a19cf7b612631364e1450045349792fc654c849a4078e93cc88.png" />
+<img alt="_images/cb76f20c3e9986831ea25c8aafcb4e2db6d15099bf997cf8f9a8f677fead27ba.png" src="_images/cb76f20c3e9986831ea25c8aafcb4e2db6d15099bf997cf8f9a8f677fead27ba.png" />
 </div>
 </div>
 <p>notamos presencia de datos atipicos para cada variable numerica gracias a la grafica de los boxplots</p>
@@ -1167,9 +1226,260 @@ memory usage: 73.3+ KB
 </section>
 <section id="contrastacion-de-hipotesis">
 <h2>Contrastación de hipótesis<a class="headerlink" href="#contrastacion-de-hipotesis" title="Link to this heading">#</a></h2>
+<section id="hipotesis-1-existen-diferencias-significativas-en-los-cargos-segun-habito-de-fumar-t-test">
+<h3>hipotesis 1: ¿Existen diferencias significativas en los cargos según hábito de fumar? (t-test).<a class="headerlink" href="#hipotesis-1-existen-diferencias-significativas-en-los-cargos-segun-habito-de-fumar-t-test" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Separar grupos</span>
+<span class="n">smoker_charges</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;smoker&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span><span class="p">][</span><span class="s2">&quot;charges&quot;</span><span class="p">]</span>
+<span class="n">non_smoker_charges</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;smoker&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;no&quot;</span><span class="p">][</span><span class="s2">&quot;charges&quot;</span><span class="p">]</span>
+
+<span class="c1"># Prueba t-test (asumiendo varianzas desiguales)</span>
+<span class="n">t_stat</span><span class="p">,</span> <span class="n">p_val</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">smoker_charges</span><span class="p">,</span> <span class="n">non_smoker_charges</span><span class="p">,</span> <span class="n">equal_var</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;T-test fumadores vs no fumadores&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;t = </span><span class="si">{:.3f}</span><span class="s2">, p = </span><span class="si">{:.5f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t_stat</span><span class="p">,</span> <span class="n">p_val</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>T-test fumadores vs no fumadores
+t = 32.752, p = 0.00000
+</pre></div>
+</div>
+</div>
+</div>
+<p>Los fumadores tienen cargos significativamente más altos que los no fumadores. Esto es consistente con lo esperado: fumar eleva mucho el riesgo de enfermedades y, por tanto, el costo de los seguros.</p>
+</section>
+<section id="hipotesis-2">
+<h3>Hipotesis 2<a class="headerlink" href="#hipotesis-2" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ANOVA</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ols</span><span class="p">(</span><span class="s2">&quot;charges ~ C(region)&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="n">anova_table</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">anova_lm</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ANOVA - Cargos según región&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">anova_table</span><span class="p">)</span>
+
+<span class="c1"># Tukey HSD (si ANOVA es significativo)</span>
+<span class="n">tukey</span> <span class="o">=</span> <span class="n">pairwise_tukeyhsd</span><span class="p">(</span><span class="n">endog</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;charges&quot;</span><span class="p">],</span> <span class="n">groups</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;region&quot;</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Tukey HSD - Comparaciones entre regiones&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tukey</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>ANOVA - Cargos según región
+                 sum_sq      df         F    PR(&gt;F)
+C(region)  1.300760e+09     3.0  2.969627  0.030893
+Residual   1.947735e+11  1334.0       NaN       NaN
+
+Tukey HSD - Comparaciones entre regiones
+       Multiple Comparison of Means - Tukey HSD, FWER=0.05       
+=================================================================
+  group1    group2   meandiff  p-adj    lower      upper   reject
+-----------------------------------------------------------------
+northeast northwest  -988.8091 0.7245 -3428.9343 1451.3161  False
+northeast southeast  1329.0269 0.4745 -1044.9417 3702.9955  False
+northeast southwest -1059.4471 0.6792 -3499.5723 1380.6781  False
+northwest southeast  2317.8361 0.0583   -54.1994 4689.8716  False
+northwest southwest    -70.638 0.9999 -2508.8826 2367.6066  False
+southeast southwest -2388.4741 0.0477 -4760.5096  -16.4386   True
+-----------------------------------------------------------------
+</pre></div>
+</div>
+</div>
+</div>
+<p>Aunque en general las diferencias regionales no son muy grandes, sí se detecta que en el southeast los cargos son significativamente mayores que en el southwest.</p>
+</section>
 </section>
 <section id="imputacion-en-python">
 <h2>Imputacion en python<a class="headerlink" href="#imputacion-en-python" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+<span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+<span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+<span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+<span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+<span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+<span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+<span class="n">df_imputado</span> <span class="o">=</span> <span class="n">imputar_outliers_mediana</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bmi&quot;</span><span class="p">,</span> <span class="s2">&quot;charges&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">resumen_numericas</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>count</th>
+      <th>mean</th>
+      <th>std</th>
+      <th>min</th>
+      <th>25%</th>
+      <th>50%</th>
+      <th>75%</th>
+      <th>max</th>
+      <th>varianza</th>
+      <th>mediana</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>age</th>
+      <td>1338.0</td>
+      <td>39.207025</td>
+      <td>14.049960</td>
+      <td>18.0000</td>
+      <td>27.00000</td>
+      <td>39.000000</td>
+      <td>51.000</td>
+      <td>64.000</td>
+      <td>1.974014e+02</td>
+      <td>39.000000</td>
+    </tr>
+    <tr>
+      <th>bmi</th>
+      <td>1338.0</td>
+      <td>30.512022</td>
+      <td>5.866633</td>
+      <td>15.9600</td>
+      <td>26.29625</td>
+      <td>30.400000</td>
+      <td>34.430</td>
+      <td>46.530</td>
+      <td>3.441739e+01</td>
+      <td>30.400000</td>
+    </tr>
+    <tr>
+      <th>children</th>
+      <td>1338.0</td>
+      <td>1.094918</td>
+      <td>1.205493</td>
+      <td>0.0000</td>
+      <td>0.00000</td>
+      <td>1.000000</td>
+      <td>2.000</td>
+      <td>5.000</td>
+      <td>1.453213e+00</td>
+      <td>1.000000</td>
+    </tr>
+    <tr>
+      <th>charges</th>
+      <td>1338.0</td>
+      <td>7803.660956</td>
+      <td>3575.479740</td>
+      <td>1121.8739</td>
+      <td>4740.28715</td>
+      <td>9377.920826</td>
+      <td>9382.033</td>
+      <td>16297.846</td>
+      <td>1.278406e+07</td>
+      <td>9377.920826</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">detectar_outliers</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>variable</th>
+      <th>n_muestras</th>
+      <th>outliers</th>
+      <th>proporcion_outliers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>age</td>
+      <td>1338</td>
+      <td>0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>bmi</td>
+      <td>1338</td>
+      <td>0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>children</td>
+      <td>1338</td>
+      <td>0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>charges</td>
+      <td>1338</td>
+      <td>0</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graficar_numericas</span><span class="p">(</span><span class="n">df_imputado</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/13398792ee5b33bfee9e6d8b206ada3bc1ad16248276513ffcb57729d28e4211.png" src="_images/13398792ee5b33bfee9e6d8b206ada3bc1ad16248276513ffcb57729d28e4211.png" />
+<img alt="_images/db4c458902f87f88b6fc059b85c22b0c7b55197125747475418561e58d48195d.png" src="_images/db4c458902f87f88b6fc059b85c22b0c7b55197125747475418561e58d48195d.png" />
+<img alt="_images/8e1ab621a8c03330cc8ce7af55f6137578b9c83ce220680f08258ead46a23c0d.png" src="_images/8e1ab621a8c03330cc8ce7af55f6137578b9c83ce220680f08258ead46a23c0d.png" />
+<img alt="_images/6eb9bdb456b5f2669c1e27281ec68fbe4a8c0ff945ca1fbada41bbf4d5c08b04.png" src="_images/6eb9bdb456b5f2669c1e27281ec68fbe4a8c0ff945ca1fbada41bbf4d5c08b04.png" />
+</div>
+</div>
 </section>
 </section>
 
@@ -1209,7 +1519,7 @@ memory usage: 73.3+ KB
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Welcome to your Jupyter Book</p>
+        <p class="prev-next-title">Introduccion</p>
       </div>
     </a>
 </div>
@@ -1232,7 +1542,11 @@ memory usage: 73.3+ KB
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#funciones">funciones</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos-y-exploraciones-iniciales">Cargado de datos y exploraciones iniciales</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-descriptivo-eda">Analisis descriptivo(EDA)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contrastacion-de-hipotesis">Contrastación de hipótesis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contrastacion-de-hipotesis">Contrastación de hipótesis</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hipotesis-1-existen-diferencias-significativas-en-los-cargos-segun-habito-de-fumar-t-test">hipotesis 1: ¿Existen diferencias significativas en los cargos según hábito de fumar? (t-test).</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hipotesis-2">Hipotesis 2</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#imputacion-en-python">Imputacion en python</a></li>
 </ul>
   </nav></div>
